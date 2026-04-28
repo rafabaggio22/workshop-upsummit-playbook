@@ -1,0 +1,38 @@
+name: Update Dashboard
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # a cada 30 minutos
+  workflow_dispatch: {}       # permite rodar manualmente
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run update_dashboard.py
+        env:
+          CLINT_TOKEN: ${{ secrets.CLINT_TOKEN }}
+        run: python update_dashboard.py
+
+      - name: Commit data.json se mudou
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -n $(git status --porcelain data.json) ]]; then
+            git add data.json
+            git commit -m "chore: update dashboard data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          else
+            echo "Sem mudancas no data.json"
+          fi
